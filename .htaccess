@@ -1,0 +1,9 @@
+# Use as rewrite rules no Apache (ativar mod_rewrite)
+RewriteEngine On
+RewriteBase /
+# Arquivos/diretorios existentes passam direto
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+# Tudo vai para index.php mantendo query string
+RewriteRule ^ index.php [QSA,L]
