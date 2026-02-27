@@ -4,6 +4,11 @@ $dueDayInput = isset($_GET['due_day']) ? (int)$_GET['due_day'] : 5;
 $dueDayInput = max(1, min(31, $dueDayInput));
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!Csrf::check($_POST['csrf_token'] ?? null)) {
+        Flash::set('danger', 'Sessão inválida. Atualize a página e tente novamente.');
+        header('Location: ?p=invoices/generate');
+        exit;
+    }
     $ym = $_POST['ym'] ?? date('Y-m');
     $dueDayInput = max(1, min(31, (int)($_POST['due_day'] ?? 5)));
     if (!preg_match('/^\d{4}-\d{2}$/', $ym)) {
@@ -47,6 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 <h3>Gerar mensalidades</h3>
 <form method="post" class="row g-3">
+    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Csrf::token()) ?>">
     <div class="col-md-4">
         <label class="form-label">Competencia (AAAA-MM)</label>
         <input name="ym" type="month" class="form-control" value="<?= htmlspecialchars($ym) ?>">

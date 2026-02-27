@@ -1,21 +1,36 @@
 <?php
 $id = (int)($_GET['id'] ?? 0);
 $data = $id ? TemplateM::find($id) : ['code' => 'before_due', 'title' => '', 'body' => '', 'active' => 1];
+if ($id && !$data) {
+    echo 'Template não encontrado.';
+    return;
+}
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $payload = [
+    if (!Csrf::check($_POST['csrf_token'] ?? null)) {
+        Flash::set('danger', 'Sessão inválida. Atualize a página e tente novamente.');
+    } else {
+        $payload = [
             'code' => $_POST['code'],
             'title' => $_POST['title'],
             'body' => $_POST['body'],
             'active' => isset($_POST['active']) ? 1 : 0
-    ];
-    TemplateM::upsert($id ?: null, $payload);
-    Flash::set('success', 'Template salvo');
-    header('Location: ?p=templates/index');
-    exit;
+        ];
+        $data = array_merge($data, $payload);
+        $allowedCodes = ['before_due', 'on_due', 'overdue'];
+        if (!in_array($payload['code'], $allowedCodes, true) || trim($payload['title']) === '' || trim($payload['body']) === '') {
+            Flash::set('danger', 'Preencha os campos obrigatórios corretamente.');
+        } else {
+            TemplateM::upsert($id ?: null, $payload);
+            Flash::set('success', 'Template salvo');
+            header('Location: ?p=templates/index');
+            exit;
+        }
+    }
 }
 ?>
 <h3><?= $id ? 'Editar' : 'Novo' ?> template</h3>
 <form method="post" class="row g-3">
+    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Csrf::token()) ?>">
     <div class="col-md-4">
         <label class="form-label">Tipo</label>
         <select name="code" class="form-select">

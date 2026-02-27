@@ -2,6 +2,15 @@
 
 class PlanHistory
 {
+    private static function isValidDate(string $date): bool
+    {
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+            return false;
+        }
+        [$y, $m, $d] = array_map('intval', explode('-', $date));
+        return checkdate($m, $d, $y);
+    }
+
     public static function bySite(int $siteId): array
     {
         $stm = Database::pdo()->prepare('SELECT * FROM plan_history WHERE site_id=? ORDER BY effective_from DESC');
@@ -11,6 +20,13 @@ class PlanHistory
 
     public static function add(int $siteId, float $amount, string $from, ?string $notes = null): void
     {
+        if ($amount <= 0) {
+            throw new InvalidArgumentException('O valor do histórico deve ser maior que zero.');
+        }
+        if (!self::isValidDate($from)) {
+            throw new InvalidArgumentException('Data de início inválida.');
+        }
+
         $pdo = Database::pdo();
         $pdo->beginTransaction();
         try {

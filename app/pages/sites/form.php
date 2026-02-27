@@ -2,34 +2,74 @@
 $id = (int)($_GET['id'] ?? 0);
 $clientId = (int)($_GET['client_id'] ?? 0);
 $data = $id ? Site::find($id) : ['client_id' => $clientId, 'name' => '', 'domain' => '', 'creation_cost' => '0', 'current_monthly_fee' => '0'];
+if ($id && !$data) {
+    echo 'Site não encontrado.';
+    return;
+}
 $clients = Client::all(0, 1000);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $errors = Validation::required($_POST, ['client_id', 'name']);
-    if (!$errors) {
-        $payload = [
-                'client_id' => (int)$_POST['client_id'],
-                'name' => $_POST['name'],
-                'domain' => $_POST['domain'] ?? null,
-                'creation_cost' => (float)($_POST['creation_cost'] ?? 0),
-                'current_monthly_fee' => (float)($_POST['current_monthly_fee'] ?? 0),
-        ];
-        if ($id) {
-            Site::update($id, $payload);
-            Flash::set('success', 'Site atualizado');
-        } else {
-            $id = Site::create($payload);
-            Flash::set('success', 'Site criado');
-        }
-        header('Location: ?p=sites/index');
-        exit;
+    if (!Csrf::check($_POST['csrf_token'] ?? null)) {
+        Flash::set('danger', 'Sessão inválida. Atualize a página e tente novamente.');
     } else {
-        Flash::set('danger', 'Preencha os campos obrigatórios.');
+        $action = $_POST['form_action'] ?? 'save_site';
+        if ($action === 'add_history') {
+            if (!$id) {
+                Flash::set('danger', 'Site inválido para adicionar histórico.');
+            } else {
+                try {
+                    PlanHistory::add(
+                        $id,
+                        (float)($_POST['new_amount'] ?? 0),
+                        $_POST['from'] ?: date('Y-m-d'),
+                        trim((string)($_POST['notes'] ?? '')) ?: null
+                    );
+                    Flash::set('success', 'Histórico adicionado e mensalidade atual atualizada.');
+                    header('Location: ?p=sites/form&id=' . $id);
+                    exit;
+                } catch (InvalidArgumentException $e) {
+                    Flash::set('danger', $e->getMessage());
+                }
+            }
+        } else {
+            $errors = Validation::required($_POST, ['client_id', 'name']);
+            $data['client_id'] = (int)($_POST['client_id'] ?? 0);
+            $data['name'] = trim((string)($_POST['name'] ?? ''));
+            $data['domain'] = trim((string)($_POST['domain'] ?? '')) ?: null;
+            $data['creation_cost'] = (float)($_POST['creation_cost'] ?? 0);
+            if (!$id) {
+                $data['current_monthly_fee'] = (float)($_POST['current_monthly_fee'] ?? 0);
+            }
+
+            if (!$errors) {
+                $monthlyFee = $id ? (float)$data['current_monthly_fee'] : (float)($_POST['current_monthly_fee'] ?? 0);
+                $payload = [
+                    'client_id' => (int)$_POST['client_id'],
+                    'name' => trim((string)$_POST['name']),
+                    'domain' => trim((string)($_POST['domain'] ?? '')) ?: null,
+                    'creation_cost' => (float)($_POST['creation_cost'] ?? 0),
+                    'current_monthly_fee' => $monthlyFee,
+                ];
+                if ($id) {
+                    Site::update($id, $payload);
+                    Flash::set('success', 'Site atualizado');
+                } else {
+                    $id = Site::create($payload);
+                    Flash::set('success', 'Site criado');
+                }
+                header('Location: ?p=sites/index');
+                exit;
+            } else {
+                Flash::set('danger', 'Preencha os campos obrigatórios.');
+            }
+        }
     }
 }
 ?>
 <h3><?= $id ? 'Editar' : 'Novo' ?> site</h3>
 <form method="post" class="row g-3">
+    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Csrf::token()) ?>">
+    <input type="hidden" name="form_action" value="save_site">
     <div class="col-md-6">
         <label class="form-label">Cliente *</label>
         <select name="client_id" class="form-select" required>
@@ -66,10 +106,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <?php if ($id): $hist = PlanHistory::bySite($id); ?>
     <hr>
     <h5>Histórico de mensalidade</h5>
-    <form method="post" class="row g-2" action="?p=sites/form&id=<?= $id ?>&add_history=1">
+    <form method="post" class="row g-2" action="?p=sites/form&id=<?= $id ?>">
+        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Csrf::token()) ?>">
+        <input type="hidden" name="form_action" value="add_history">
         <div class="col-md-3">
             <label class="form-label">Novo valor (R$)</label>
-            <input name="new_amount" type="number" step="0.01" class="form-control">
+            <input name="new_amount" type="number" step="0.01" min="0.01" class="form-control" required>
         </div>
         <div class="col-md-3">
             <label class="form-label">Válido a partir de</label>
@@ -101,11 +143,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endforeach; ?>
         </tbody>
     </table>
-    <?php
-    if (($_GET['add_history'] ?? '') === '1' && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['new_amount'])) {
-        PlanHistory::add($id, (float)$_POST['new_amount'], $_POST['from'] ?: date('Y-m-d'), $_POST['notes'] ?? null);
-        Flash::set('success', 'Histórico adicionado e mensalidade atual atualizada.');
-        header('Location: ?p=sites/form&id=' . $id);
-        exit;
-    }
-endif; ?>
+<?php endif; ?>

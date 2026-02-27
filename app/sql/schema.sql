@@ -47,15 +47,18 @@ CREATE TABLE IF NOT EXISTS invoices
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
     site_id    INTEGER NOT NULL,
     client_id  INTEGER NOT NULL,
-    amount     REAL    NOT NULL,
+    amount     REAL    NOT NULL CHECK (amount > 0),
     due_date   TEXT    NOT NULL,
-    STATUS     TEXT    NOT NULL DEFAULT 'pending',
+    STATUS     TEXT    NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'paid', 'overdue', 'canceled')),
     notes      TEXT,
     created_at TEXT             DEFAULT (DATETIME('now')),
     updated_at TEXT             DEFAULT (DATETIME('now')),
     FOREIGN KEY (site_id) REFERENCES sites (id) ON DELETE CASCADE,
     FOREIGN KEY (client_id) REFERENCES clients (id) ON DELETE CASCADE
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_invoices_site_due_date
+    ON invoices(site_id, due_date);
 
 CREATE TABLE IF NOT EXISTS templates
 (
@@ -66,10 +69,6 @@ CREATE TABLE IF NOT EXISTS templates
     active     INTEGER NOT NULL DEFAULT 1,
     updated_at TEXT             DEFAULT (DATETIME('now'))
 );
-
-INSERT OR IGNORE
-INTO users (id, NAME, email, password_hash)
-VALUES (1, 'Admin', 'admin@example.com', '$2y$10$MxiU.PXSCpMCXEbuXdYJOuagXQkij7nThtu2RaAbu03/C14CVQRXG'); -- admin123
 
 INSERT OR IGNORE
 INTO templates (CODE, title, body)

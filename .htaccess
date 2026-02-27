@@ -1,6 +1,17 @@
 # Use as rewrite rules no Apache (ativar mod_rewrite)
 RewriteEngine On
 RewriteBase /
+
+<IfModule mod_authz_core.c>
+    <FilesMatch "^(config\.php|\.env)$">
+        Require all denied
+    </FilesMatch>
+    <FilesMatch "\.(sqlite|db|sql|log)$">
+        Require all denied
+    </FilesMatch>
+</IfModule>
+
+RewriteRule ^app/(storage|sql)/ - [F,L,NC]
 # Arquivos/diretorios existentes passam direto
 RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d

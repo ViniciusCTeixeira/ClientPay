@@ -35,7 +35,11 @@ $items = Client::all(($pageNo - 1) * $per, $per, $q ?: null);
             <td><?= htmlspecialchars($r['whatsapp']) ?></td>
             <td class="text-end">
                 <a class="btn btn-sm btn-outline-secondary" href="?p=clients/form&id=<?= $r['id'] ?>">Editar</a>
-                <a class="btn btn-sm btn-outline-danger" href="?p=clients/delete&id=<?= $r['id'] ?>">Excluir</a>
+                <form method="post" action="?p=clients/delete" class="d-inline">
+                    <input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Csrf::token()) ?>">
+                    <button class="btn btn-sm btn-outline-danger" type="submit">Excluir</button>
+                </form>
             </td>
         </tr>
     <?php endforeach; ?>

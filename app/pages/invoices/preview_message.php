@@ -27,7 +27,7 @@ $waLink = $waNumber ? ('https://wa.me/' . $waNumber . '?text=' . rawurlencode($b
     </div>
 </div>
 <?php if ($waLink): ?>
-    <p class="mt-3"><a class="btn btn-success" href="<?= $waLink ?>" target="_blank">Enviar via WhatsApp</a></p>
+    <p class="mt-3"><a class="btn btn-success" href="<?= $waLink ?>" target="_blank" rel="noopener noreferrer">Enviar via WhatsApp</a></p>
 <?php else: ?>
     <div class="alert alert-warning mt-3">Cliente sem número de WhatsApp cadastrado.</div>
 <?php endif; ?>

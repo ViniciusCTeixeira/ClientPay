@@ -1,7 +1,7 @@
 <?php
 return [
     'db' => [
-        'path' => __DIR__ . '/app/storage/database.sqlite',
+        'path' => getenv('CLIENTPAY_DB_PATH') ?: (__DIR__ . '/app/storage/database.sqlite'),
         'sql' => __DIR__ . '/app/sql/schema.sql',
     ],
     'app' => [

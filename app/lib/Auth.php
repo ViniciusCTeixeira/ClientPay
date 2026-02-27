@@ -8,9 +8,11 @@ class Auth
         $stm->execute([$email]);
         $u = $stm->fetch();
         if ($u && password_verify($password, $u['password_hash'])) {
+            session_regenerate_id(true);
             $_SESSION['uid'] = $u['id'];
             $_SESSION['uname'] = $u['name'];
             $_SESSION['uemail'] = $u['email'];
+            Csrf::rotate();
             return true;
         }
         return false;
@@ -46,6 +48,11 @@ class Auth
 
     public static function logout(): void
     {
+        $_SESSION = [];
+        if (ini_get('session.use_cookies')) {
+            $params = session_get_cookie_params();
+            setcookie(session_name(), '', time() - 42000, $params['path'], $params['domain'], (bool)$params['secure'], (bool)$params['httponly']);
+        }
         session_destroy();
     }
 }

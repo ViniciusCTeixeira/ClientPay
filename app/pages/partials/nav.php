@@ -19,8 +19,12 @@
                     <li class="nav-item"><a class="nav-link" href="?p=auth/change_password">Trocar senha</a></li>
                     <li class="nav-item"><p class="navbar-text me-2 mb-0">
                             Olá, <?= htmlspecialchars($_SESSION['uname'] ?? '') ?></p></li>
-                    <li class="nav-item d-flex align-items-center"><a class="btn btn-sm btn-outline-secondary"
-                                                                      href="?p=auth/logout">Sair</a></li>
+                    <li class="nav-item d-flex align-items-center">
+                        <form method="post" action="?p=auth/logout" class="mb-0">
+                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Csrf::token()) ?>">
+                            <button class="btn btn-sm btn-outline-secondary" type="submit">Sair</button>
+                        </form>
+                    </li>
                 <?php endif; ?>
             </ul>
         </div>

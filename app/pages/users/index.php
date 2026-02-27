@@ -35,7 +35,11 @@ $items = User::all(($pageNo - 1) * $per, $per, $q ?: null);
             <td><?= Formatter::dateBr($user['created_at']) ?></td>
             <td class="text-end">
                 <a class="btn btn-sm btn-outline-secondary" href="?p=users/form&id=<?= $user['id'] ?>">Editar</a>
-                <a class="btn btn-sm btn-outline-danger" href="?p=users/delete&id=<?= $user['id'] ?>">Excluir</a>
+                <form method="post" action="?p=users/delete" class="d-inline">
+                    <input type="hidden" name="id" value="<?= (int)$user['id'] ?>">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Csrf::token()) ?>">
+                    <button class="btn btn-sm btn-outline-danger" type="submit">Excluir</button>
+                </form>
             </td>
         </tr>
     <?php endforeach; ?>

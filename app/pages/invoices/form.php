@@ -3,34 +3,61 @@ $id = (int)($_GET['id'] ?? 0);
 $clients = Client::all(0, 1000);
 $sites = Site::all(0, 1000);
 $data = $id ? Invoice::find($id) : ['site_id' => '', 'client_id' => '', 'amount' => '', 'due_date' => date('Y-m-d'), 'status' => 'pending', 'notes' => ''];
+if ($id && !$data) {
+    echo 'Mensalidade não encontrada.';
+    return;
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $errors = Validation::required($_POST, ['site_id', 'client_id', 'due_date']);
-    if (!$errors) {
-        $payload = [
+    if (!Csrf::check($_POST['csrf_token'] ?? null)) {
+        Flash::set('danger', 'Sessão inválida. Atualize a página e tente novamente.');
+    } else {
+        $errors = Validation::required($_POST, ['site_id', 'client_id', 'due_date']);
+        $data = array_merge($data, [
+            'site_id' => (int)($_POST['site_id'] ?? 0),
+            'client_id' => (int)($_POST['client_id'] ?? 0),
+            'amount' => (string)($_POST['amount'] ?? ''),
+            'due_date' => (string)($_POST['due_date'] ?? ''),
+            'status' => (string)($_POST['status'] ?? 'pending'),
+            'notes' => (string)($_POST['notes'] ?? ''),
+        ]);
+        if (!$errors) {
+            $payload = [
                 'site_id' => (int)$_POST['site_id'],
                 'client_id' => (int)$_POST['client_id'],
                 'amount' => (float)($_POST['amount'] !== '' ? $_POST['amount'] : PlanHistory::resolveAmountForDate((int)$_POST['site_id'], $_POST['due_date'])),
                 'due_date' => $_POST['due_date'],
                 'status' => $_POST['status'] ?? 'pending',
                 'notes' => $_POST['notes'] ?? null
-        ];
-        if ($id) {
-            Invoice::update($id, $payload);
-            Flash::set('success', 'Mensalidade atualizada');
+            ];
+            try {
+                if ($id) {
+                    Invoice::update($id, $payload);
+                    Flash::set('success', 'Mensalidade atualizada');
+                } else {
+                    $id = Invoice::create($payload);
+                    Flash::set('success', 'Mensalidade criada');
+                }
+                header('Location: ?p=invoices/index');
+                exit;
+            } catch (InvalidArgumentException $e) {
+                Flash::set('danger', $e->getMessage());
+            } catch (PDOException $e) {
+                if (str_contains($e->getMessage(), 'UNIQUE constraint failed')) {
+                    Flash::set('danger', 'Já existe mensalidade para este site nesta data.');
+                } else {
+                    throw $e;
+                }
+            }
         } else {
-            $id = Invoice::create($payload);
-            Flash::set('success', 'Mensalidade criada');
+            Flash::set('danger', 'Preencha os campos obrigatórios.');
         }
-        header('Location: ?p=invoices/index');
-        exit;
-    } else {
-        Flash::set('danger', 'Preencha os campos obrigatórios.');
     }
 }
 ?>
 <h3><?= $id ? 'Editar' : 'Nova' ?> mensalidade</h3>
 <form method="post" class="row g-3">
+    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Csrf::token()) ?>">
     <div class="col-md-4">
         <label class="form-label">Cliente *</label>
         <select name="client_id" class="form-select" required>

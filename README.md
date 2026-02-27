@@ -39,10 +39,12 @@ Depois acesse `http://localhost:8080/index.php`.
 
 ## Primeiro acesso
 - Ao entrar pela primeira vez, o arquivo `app/storage/database.sqlite` é criado automaticamente usando `app/sql/schema.sql`.
-- Um usuário administrador padrão é registrado.
-
-> **Login padrão**: `admin@example.com` / `admin123`  
-> Altere a senha assim que fizer login (menu **Trocar senha**).
+- Um usuário administrador inicial é criado automaticamente.
+- Se `CLIENTPAY_ADMIN_PASSWORD` não for definida, as credenciais iniciais são gravadas em `app/storage/initial_admin_credentials.txt`.
+- Opcionalmente, você pode definir variáveis de ambiente antes do primeiro acesso:
+  - `CLIENTPAY_ADMIN_EMAIL`
+  - `CLIENTPAY_ADMIN_PASSWORD`
+  - `CLIENTPAY_ADMIN_NAME`
 
 ---
 
@@ -79,8 +81,11 @@ index.php         # Front controller
 
 ## Banco de dados & automações
 - **Arquivo**: `app/storage/database.sqlite` (pode ser copiado para backup).
-- **Schema**: `app/sql/schema.sql`, inclui inserts iniciais de usuário admin e templates.
+- **Schema**: `app/sql/schema.sql`, inclui estrutura principal e templates iniciais.
 - **Limpar/Resetar**: basta remover o arquivo `database.sqlite`; ele será recriado no próximo acesso.
+- **Caminho customizado do banco**: configure `CLIENTPAY_DB_PATH` para armazenar o SQLite em outro diretório.
+- **Migrações automáticas**: ao iniciar, o sistema aplica migrações pendentes sem apagar dados e registra em `schema_migrations`.
+- **Novas alterações de banco**: adicione uma nova entrada versionada em `Database::runMigrations()` (`app/lib/Database.php`).
 - **Geração de mensalidades** (`?p=invoices/generate`):
   - Informe a competência (AAAA-MM) e um dia padrão.
   - Cada site usa o último dia de vencimento conhecido; sites sem histórico usam o padrão.

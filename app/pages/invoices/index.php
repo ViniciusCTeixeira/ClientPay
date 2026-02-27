@@ -2,7 +2,7 @@
 $q = trim($_GET['q'] ?? '');
 $pageNo = max(1, (int)($_GET['page'] ?? 1));
 $per = 20;
-$total = Invoice::count();
+$total = Invoice::count($q ?: null);
 $items = Invoice::all(($pageNo - 1) * $per, $per, $q ?: null);
 ?>
 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -10,7 +10,10 @@ $items = Invoice::all(($pageNo - 1) * $per, $per, $q ?: null);
     <div>
         <a href="?p=invoices/form" class="btn btn-primary">+ Nova</a>
         <a href="?p=invoices/generate" class="btn btn-outline-primary">Gerar em lote</a>
-        <a href="?p=invoices/update" class="btn btn-outline-primary">Atualizar</a>
+        <form method="post" action="?p=invoices/update" class="d-inline">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Csrf::token()) ?>">
+            <button type="submit" class="btn btn-outline-primary">Atualizar</button>
+        </form>
     </div>
 </div>
 <form class="mb-3" method="get">
@@ -61,7 +64,11 @@ $items = Invoice::all(($pageNo - 1) * $per, $per, $q ?: null);
                 <a class="btn btn-sm btn-outline-secondary" href="?p=invoices/form&id=<?= $r['id'] ?>">Editar</a>
                 <a class="btn btn-sm btn-outline-info" href="?p=invoices/preview_message&id=<?= $r['id'] ?>">🔗
                     WhatsApp</a>
-                <a class="btn btn-sm btn-outline-danger" href="?p=invoices/delete&id=<?= $r['id'] ?>">Excluir</a>
+                <form method="post" action="?p=invoices/delete" class="d-inline">
+                    <input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Csrf::token()) ?>">
+                    <button class="btn btn-sm btn-outline-danger" type="submit">Excluir</button>
+                </form>
             </td>
         </tr>
     <?php endforeach; ?>
