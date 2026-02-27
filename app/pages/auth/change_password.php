@@ -23,7 +23,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         Auth::updatePassword((int)$user['id'], $new);
         Flash::set('success', 'Senha alterada com sucesso! Faça login novamente.');
-        header('Location: ?p=auth/logout');
+        unset($_SESSION['uid'], $_SESSION['uname'], $_SESSION['uemail']);
+        session_regenerate_id(true);
+        Csrf::rotate();
+        header('Location: ?p=auth/login');
         exit;
     }
     }
