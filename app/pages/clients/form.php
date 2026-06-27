@@ -13,6 +13,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $data['name'] = trim((string)($_POST['name'] ?? ''));
         $data['email'] = trim((string)($_POST['email'] ?? ''));
         $data['whatsapp'] = trim((string)($_POST['whatsapp'] ?? ''));
+        if ($data['email'] !== '' && !filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+            $errors['email'] = 'E-mail inválido';
+        }
         if (!$errors) {
             $payload = [
                 'name' => trim($_POST['name']),

@@ -1,7 +1,6 @@
 <?php $items = TemplateM::all(); ?>
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h3>Templates de mensagens</h3>
-    <a href="?p=templates/form" class="btn btn-primary">+ Novo</a>
 </div>
 <table class="table table-striped">
     <thead>
@@ -30,11 +29,6 @@
             <td><?= $r['active'] ? 'Sim' : 'Não' ?></td>
             <td class="text-end">
                 <a class="btn btn-sm btn-outline-secondary" href="?p=templates/form&id=<?= $r['id'] ?>">Editar</a>
-                <form method="post" action="?p=templates/delete" class="d-inline">
-                    <input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
-                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Csrf::token()) ?>">
-                    <button class="btn btn-sm btn-outline-danger" type="submit">Excluir</button>
-                </form>
             </td>
         </tr>
     <?php endforeach; ?>

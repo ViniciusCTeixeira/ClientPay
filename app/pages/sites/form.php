@@ -7,6 +7,7 @@ if ($id && !$data) {
     return;
 }
 $clients = Client::all(0, 1000);
+$clientLocked = $id > 0 && Site::hasInvoices($id);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!Csrf::check($_POST['csrf_token'] ?? null)) {
@@ -50,15 +51,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'creation_cost' => (float)($_POST['creation_cost'] ?? 0),
                     'current_monthly_fee' => $monthlyFee,
                 ];
-                if ($id) {
-                    Site::update($id, $payload);
-                    Flash::set('success', 'Site atualizado');
-                } else {
-                    $id = Site::create($payload);
-                    Flash::set('success', 'Site criado');
+                try {
+                    if ($id) {
+                        Site::update($id, $payload);
+                        Flash::set('success', 'Site atualizado');
+                    } else {
+                        $id = Site::create($payload);
+                        Flash::set('success', 'Site criado');
+                    }
+                    header('Location: ?p=sites/index');
+                    exit;
+                } catch (InvalidArgumentException $e) {
+                    Flash::set('danger', $e->getMessage());
                 }
-                header('Location: ?p=sites/index');
-                exit;
             } else {
                 Flash::set('danger', 'Preencha os campos obrigatórios.');
             }
@@ -72,12 +77,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <input type="hidden" name="form_action" value="save_site">
     <div class="col-md-6">
         <label class="form-label">Cliente *</label>
-        <select name="client_id" class="form-select" required>
+        <select name="client_id" class="form-select" required <?= $clientLocked ? 'disabled' : '' ?>>
             <option value="">Selecione...</option>
             <?php foreach ($clients as $c): ?>
                 <option value="<?= $c['id'] ?>" <?= ($data['client_id'] == $c['id']) ? 'selected' : '' ?>><?= htmlspecialchars($c['name']) ?></option>
             <?php endforeach; ?>
         </select>
+        <?php if ($clientLocked): ?>
+            <input type="hidden" name="client_id" value="<?= (int)$data['client_id'] ?>">
+            <div class="form-text">O cliente não pode ser alterado porque este site já possui mensalidades.</div>
+        <?php endif; ?>
     </div>
     <div class="col-md-6">
         <label class="form-label">Nome do site *</label>
@@ -89,12 +98,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
     <div class="col-md-3">
         <label class="form-label">Valor de criação (R$)</label>
-        <input name="creation_cost" type="number" step="0.01" class="form-control"
+        <input name="creation_cost" type="number" step="0.01" min="0" class="form-control"
                value="<?= htmlspecialchars((string)$data['creation_cost']) ?>">
     </div>
     <div class="col-md-3">
         <label class="form-label">Mensalidade atual (R$)</label>
-        <input name="current_monthly_fee" type="number" step="0.01" class="form-control"
+        <input name="current_monthly_fee" type="number" step="0.01" min="0" class="form-control"
                value="<?= htmlspecialchars((string)$data['current_monthly_fee']) ?>" <?= $id ? 'disabled' : '' ?>>
         <div class="form-text">Alterações devem ser registradas no histórico.</div>
     </div>

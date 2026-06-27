@@ -40,6 +40,9 @@ class Invoice
         $dueDate = trim((string)($d['due_date'] ?? ''));
         $status = (string)($d['status'] ?? 'pending');
         $notes = trim((string)($d['notes'] ?? '')) ?: null;
+        $paidAt = trim((string)($d['paid_at'] ?? '')) ?: null;
+        $paymentMethod = trim((string)($d['payment_method'] ?? '')) ?: null;
+        $paymentReference = trim((string)($d['payment_reference'] ?? '')) ?: null;
 
         if ($siteId <= 0 || $clientId <= 0) {
             throw new InvalidArgumentException('Cliente e site são obrigatórios.');
@@ -52,6 +55,20 @@ class Invoice
         }
         self::assertValidStatus($status);
         self::assertSiteBelongsToClient($siteId, $clientId);
+        $allowedMethods = ['pix', 'boleto', 'card', 'transfer', 'cash', 'other'];
+        if ($paymentMethod !== null && !in_array($paymentMethod, $allowedMethods, true)) {
+            throw new InvalidArgumentException('Forma de pagamento inválida.');
+        }
+        if ($status === 'paid') {
+            $paidAt = $paidAt ?: date('Y-m-d');
+            if (!self::isValidDate($paidAt)) {
+                throw new InvalidArgumentException('Data de pagamento inválida.');
+            }
+        } else {
+            $paidAt = null;
+            $paymentMethod = null;
+            $paymentReference = null;
+        }
 
         return [
             'site_id' => $siteId,
@@ -60,21 +77,38 @@ class Invoice
             'due_date' => $dueDate,
             'status' => $status,
             'notes' => $notes,
+            'paid_at' => $paidAt,
+            'payment_method' => $paymentMethod,
+            'payment_reference' => $paymentReference,
         ];
     }
 
-    public static function all(int $offset = 0, int $limit = 50, ?string $q = null): array
+    private static function filters(?string $q, ?string $status, ?string $ym): array
     {
-        $where = '';
+        $clauses = [];
         $args = [];
         if ($q) {
-            $where = 'WHERE c.name LIKE ? OR s.name LIKE ?';
-            $args = ['%' . $q . '%', '%' . $q . '%'];
+            $clauses[] = '(c.name LIKE :q OR s.name LIKE :q)';
+            $args[':q'] = '%' . $q . '%';
         }
+        if ($status && in_array($status, ['pending', 'paid', 'overdue', 'canceled'], true)) {
+            $clauses[] = 'i.status = :status';
+            $args[':status'] = $status;
+        }
+        if ($ym && preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $ym)) {
+            $clauses[] = "substr(i.due_date,1,7) = :ym";
+            $args[':ym'] = $ym;
+        }
+        return [$clauses ? ('WHERE ' . implode(' AND ', $clauses)) : '', $args];
+    }
+
+    public static function all(int $offset = 0, int $limit = 50, ?string $q = null, ?string $status = null, ?string $ym = null): array
+    {
+        [$where, $args] = self::filters($q, $status, $ym);
         $sql = "SELECT i.*, c.name client_name, s.name site_name FROM invoices i JOIN clients c ON c.id=i.client_id JOIN sites s ON s.id=i.site_id $where ORDER BY i.due_date DESC, i.id DESC LIMIT :l OFFSET :o";
         $stm = Database::pdo()->prepare($sql);
-        foreach ($args as $k => $v) {
-            $stm->bindValue($k + 1, $v);
+        foreach ($args as $key => $value) {
+            $stm->bindValue($key, $value);
         }
         $stm->bindValue(':o', $offset, PDO::PARAM_INT);
         $stm->bindValue(':l', $limit, PDO::PARAM_INT);
@@ -82,15 +116,34 @@ class Invoice
         return $stm->fetchAll();
     }
 
-    public static function count(?string $q = null): int
+    public static function count(?string $q = null, ?string $status = null, ?string $ym = null): int
     {
-        if ($q !== null && $q !== '') {
-            $stm = Database::pdo()->prepare('SELECT COUNT(*) total FROM invoices i JOIN clients c ON c.id=i.client_id JOIN sites s ON s.id=i.site_id WHERE c.name LIKE ? OR s.name LIKE ?');
-            $like = '%' . $q . '%';
-            $stm->execute([$like, $like]);
-            return (int)$stm->fetch()['total'];
+        [$where, $args] = self::filters($q, $status, $ym);
+        $stm = Database::pdo()->prepare("SELECT COUNT(*) FROM invoices i JOIN clients c ON c.id=i.client_id JOIN sites s ON s.id=i.site_id $where");
+        foreach ($args as $key => $value) {
+            $stm->bindValue($key, $value);
         }
-        return (int)Database::pdo()->query('SELECT COUNT(*) c FROM invoices')->fetch()['c'];
+        $stm->execute();
+        return (int)$stm->fetchColumn();
+    }
+
+    public static function summary(?string $ym = null): array
+    {
+        $where = '';
+        $args = [];
+        if ($ym && preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $ym)) {
+            $where = 'WHERE substr(due_date,1,7)=?';
+            $args[] = $ym;
+        }
+        $stm = Database::pdo()->prepare(
+            "SELECT COUNT(*) total,
+                    SUM(CASE WHEN status='pending' THEN amount ELSE 0 END) pending_amount,
+                    SUM(CASE WHEN status='overdue' THEN amount ELSE 0 END) overdue_amount,
+                    SUM(CASE WHEN status='paid' THEN amount ELSE 0 END) paid_amount
+             FROM invoices $where"
+        );
+        $stm->execute($args);
+        return $stm->fetch() ?: ['total' => 0, 'pending_amount' => 0, 'overdue_amount' => 0, 'paid_amount' => 0];
     }
 
     public static function find(int $id): ?array
@@ -103,26 +156,37 @@ class Invoice
     public static function create(array $d): int
     {
         $d = self::sanitizePayload($d);
-        $stm = Database::pdo()->prepare('INSERT INTO invoices(site_id,client_id,amount,due_date,status,notes) VALUES(?,?,?,?,?,?)');
-        $stm->execute([$d['site_id'], $d['client_id'], $d['amount'], $d['due_date'], $d['status'] ?? 'pending', $d['notes'] ?? null]);
+        $site = Site::find($d['site_id']);
+        $client = Client::find($d['client_id']);
+        if (!$site || !$client || !empty($site['archived_at']) || !empty($client['archived_at'])) {
+            throw new InvalidArgumentException('Cliente e site precisam estar ativos para uma nova mensalidade.');
+        }
+        if (self::existsForSiteDate($d['site_id'], $d['due_date'])) {
+            throw new InvalidArgumentException('Já existe mensalidade para este site nesta data.');
+        }
+        $stm = Database::pdo()->prepare('INSERT INTO invoices(site_id,client_id,amount,due_date,status,notes,paid_at,payment_method,payment_reference) VALUES(?,?,?,?,?,?,?,?,?)');
+        $stm->execute([$d['site_id'], $d['client_id'], $d['amount'], $d['due_date'], $d['status'], $d['notes'], $d['paid_at'], $d['payment_method'], $d['payment_reference']]);
         return (int)Database::pdo()->lastInsertId();
     }
 
     public static function update(int $id, array $d): void
     {
         $d = self::sanitizePayload($d);
-        $stm = Database::pdo()->prepare('UPDATE invoices SET site_id=?,client_id=?,amount=?,due_date=?,status=?,notes=?,updated_at=datetime("now") WHERE id=?');
-        $stm->execute([$d['site_id'], $d['client_id'], $d['amount'], $d['due_date'], $d['status'], $d['notes'] ?? null, $id]);
+        if (self::existsForSiteDate($d['site_id'], $d['due_date'], $id)) {
+            throw new InvalidArgumentException('Já existe mensalidade para este site nesta data.');
+        }
+        $stm = Database::pdo()->prepare('UPDATE invoices SET site_id=?,client_id=?,amount=?,due_date=?,status=?,notes=?,paid_at=?,payment_method=?,payment_reference=?,updated_at=datetime("now") WHERE id=?');
+        $stm->execute([$d['site_id'], $d['client_id'], $d['amount'], $d['due_date'], $d['status'], $d['notes'], $d['paid_at'], $d['payment_method'], $d['payment_reference'], $id]);
     }
 
     public static function delete(int $id): void
     {
-        Database::pdo()->prepare('DELETE FROM invoices WHERE id=?')->execute([$id]);
+        Database::pdo()->prepare("UPDATE invoices SET status='canceled',updated_at=datetime('now') WHERE id=? AND status<>'paid'")->execute([$id]);
     }
 
     public static function markPaid(int $id): void
     {
-        Database::pdo()->prepare("UPDATE invoices SET status='paid',updated_at=datetime('now') WHERE id=?")->execute([$id]);
+        Database::pdo()->prepare("UPDATE invoices SET status='paid',paid_at=?,updated_at=datetime('now') WHERE id=?")->execute([date('Y-m-d'), $id]);
     }
 
     public static function refreshStatuses(?string $today = null): array
@@ -158,10 +222,17 @@ class Invoice
         return (int)$parts[2];
     }
 
-    public static function existsForSiteDate(int $siteId, string $dueDate): bool
+    public static function existsForSiteDate(int $siteId, string $dueDate, ?int $excludeId = null): bool
     {
-        $stm = Database::pdo()->prepare('SELECT 1 FROM invoices WHERE site_id=? AND due_date=? LIMIT 1');
-        $stm->execute([$siteId, $dueDate]);
+        $sql = 'SELECT 1 FROM invoices WHERE site_id=? AND due_date=?';
+        $args = [$siteId, $dueDate];
+        if ($excludeId !== null) {
+            $sql .= ' AND id<>?';
+            $args[] = $excludeId;
+        }
+        $sql .= ' LIMIT 1';
+        $stm = Database::pdo()->prepare($sql);
+        $stm->execute($args);
         return (bool)$stm->fetchColumn();
     }
 }

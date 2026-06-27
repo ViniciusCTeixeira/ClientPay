@@ -1,3 +1,4 @@
-/app/storage/database.sqlite
+/app/storage/*.sqlite*
 /app/storage/initial_admin_credentials.txt
+*.log
 /.idea

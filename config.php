@@ -8,5 +8,7 @@ return [
         'base_url' => '/',
         'path' => __DIR__,
         'name' => 'Gerenciador de Pagamentos',
+        'timezone' => getenv('CLIENTPAY_TIMEZONE') ?: 'America/Sao_Paulo',
+        'session_timeout' => max(300, (int)(getenv('CLIENTPAY_SESSION_TIMEOUT') ?: 1800)),
     ]
 ];

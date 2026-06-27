@@ -26,28 +26,22 @@ class PlanHistory
         if (!self::isValidDate($from)) {
             throw new InvalidArgumentException('Data de início inválida.');
         }
+        $site = Site::find($siteId);
+        if (!$site || !empty($site['archived_at'])) {
+            throw new InvalidArgumentException('Site não encontrado ou arquivado.');
+        }
 
         $pdo = Database::pdo();
         $pdo->beginTransaction();
         try {
-            // Última data vigente no histórico para o site
-            $q = $pdo->prepare('SELECT MAX(effective_from) AS max_from FROM plan_history WHERE site_id=?');
-            $q->execute([$siteId]);
-            $max = $q->fetch()['max_from'] ?? null; // formato YYYY-MM-DD
-
-            // Registra o histórico (sempre)
-            $ins = $pdo->prepare('INSERT INTO plan_history(site_id,amount,effective_from,notes) VALUES(?,?,?,?)');
+            $ins = $pdo->prepare(
+                'INSERT INTO plan_history(site_id,amount,effective_from,notes) VALUES(?,?,?,?)
+                 ON CONFLICT(site_id,effective_from) DO UPDATE SET amount=excluded.amount,notes=excluded.notes'
+            );
             $ins->execute([$siteId, $amount, $from, $notes]);
-
-            // Atualiza o valor atual do site somente se:
-            // - não havia histórico anterior, OU
-            // - a nova data é mais recente que a última
-            $shouldUpdate = is_null($max) || strcmp($from, $max) > 0;
-
-            if ($shouldUpdate) {
-                $upd = $pdo->prepare('UPDATE sites SET current_monthly_fee=?, updated_at=datetime("now") WHERE id=?');
-                $upd->execute([$amount, $siteId]);
-            }
+            $current = self::resolveAmountForDate($siteId, date('Y-m-d'));
+            $upd = $pdo->prepare('UPDATE sites SET current_monthly_fee=?, updated_at=datetime("now") WHERE id=?');
+            $upd->execute([$current, $siteId]);
 
             $pdo->commit();
         } catch (Throwable $e) {
@@ -58,7 +52,7 @@ class PlanHistory
 
     public static function resolveAmountForDate(int $siteId, string $date): float
     {
-        $stm = Database::pdo()->prepare('SELECT amount FROM plan_history WHERE site_id=? AND effective_from<=? ORDER BY effective_from DESC LIMIT 1');
+        $stm = Database::pdo()->prepare('SELECT amount FROM plan_history WHERE site_id=? AND effective_from<=? ORDER BY effective_from DESC,id DESC LIMIT 1');
         $stm->execute([$siteId, $date]);
         $row = $stm->fetch();
         return (float)($row['amount'] ?? 0);

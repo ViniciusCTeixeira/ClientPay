@@ -5,10 +5,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !Csrf::check($_POST['csrf_token'] ?
     exit;
 }
 
-$id = (int)($_POST['id'] ?? 0);
-if ($id) {
-    TemplateM::delete($id);
-    Flash::set('success', 'Template excluído');
-}
+Flash::set('danger', 'Templates do sistema não podem ser excluídos; desative o template se necessário.');
 header('Location: ?p=templates/index');
 exit;

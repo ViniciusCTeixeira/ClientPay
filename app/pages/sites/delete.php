@@ -8,7 +8,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !Csrf::check($_POST['csrf_token'] ?
 $id = (int)($_POST['id'] ?? 0);
 if ($id) {
     Site::delete($id);
-    Flash::set('success', 'Site excluído');
+    Flash::set('success', 'Site arquivado. O histórico financeiro foi preservado.');
 }
 header('Location: ?p=sites/index');
 exit;

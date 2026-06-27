@@ -5,9 +5,17 @@ if (!$inv) {
     echo 'Mensalidade não encontrada';
     return;
 }
+if (!in_array($inv['status'], ['pending', 'overdue'], true)) {
+    echo '<div class="alert alert-warning">Mensagens de cobrança estão disponíveis somente para mensalidades pendentes ou vencidas.</div>';
+    return;
+}
 $today = date('Y-m-d');
 $code = ($inv['due_date'] > $today) ? 'before_due' : (($inv['due_date'] == $today) ? 'on_due' : 'overdue');
 $tmp = TemplateM::findByCode($code);
+if (!$tmp || !(int)$tmp['active']) {
+    echo '<div class="alert alert-warning">O template necessário está inativo. Ative-o antes de preparar a mensagem.</div>';
+    return;
+}
 
 $vars = [
         'client_name' => $inv['client_name'],

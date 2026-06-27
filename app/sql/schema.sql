@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS users
     name          TEXT NOT NULL,
     email         TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
+    role          TEXT NOT NULL DEFAULT 'operator' CHECK (role IN ('admin', 'operator')),
     created_at    TEXT DEFAULT (DATETIME('now'))
 );
 
@@ -14,6 +15,7 @@ CREATE TABLE IF NOT EXISTS clients
     name       TEXT NOT NULL,
     email      TEXT,
     whatsapp   TEXT,
+    archived_at TEXT,
     created_at TEXT DEFAULT (DATETIME('now')),
     updated_at TEXT DEFAULT (DATETIME('now'))
 );
@@ -24,8 +26,9 @@ CREATE TABLE IF NOT EXISTS sites
     client_id           INTEGER NOT NULL,
     name                TEXT    NOT NULL,
     domain              TEXT,
-    creation_cost       REAL    NOT NULL DEFAULT 0,
-    current_monthly_fee REAL    NOT NULL DEFAULT 0,
+    creation_cost       REAL    NOT NULL DEFAULT 0 CHECK (creation_cost >= 0),
+    current_monthly_fee REAL    NOT NULL DEFAULT 0 CHECK (current_monthly_fee >= 0),
+    archived_at         TEXT,
     created_at          TEXT             DEFAULT (DATETIME('now')),
     updated_at          TEXT             DEFAULT (DATETIME('now')),
     FOREIGN KEY (client_id) REFERENCES clients (id) ON DELETE CASCADE
@@ -35,12 +38,15 @@ CREATE TABLE IF NOT EXISTS plan_history
 (
     id             INTEGER PRIMARY KEY AUTOINCREMENT,
     site_id        INTEGER NOT NULL,
-    amount         REAL    NOT NULL,
+    amount         REAL    NOT NULL CHECK (amount >= 0),
     effective_from TEXT    NOT NULL,
     notes          TEXT,
     created_at     TEXT DEFAULT (DATETIME('now')),
     FOREIGN KEY (site_id) REFERENCES sites (id) ON DELETE CASCADE
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_plan_history_site_effective
+    ON plan_history(site_id, effective_from);
 
 CREATE TABLE IF NOT EXISTS invoices
 (
@@ -50,6 +56,9 @@ CREATE TABLE IF NOT EXISTS invoices
     amount     REAL    NOT NULL CHECK (amount > 0),
     due_date   TEXT    NOT NULL,
     status     TEXT    NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'paid', 'overdue', 'canceled')),
+    paid_at    TEXT,
+    payment_method TEXT,
+    payment_reference TEXT,
     notes      TEXT,
     created_at TEXT             DEFAULT (DATETIME('now')),
     updated_at TEXT             DEFAULT (DATETIME('now')),
@@ -68,6 +77,14 @@ CREATE TABLE IF NOT EXISTS templates
     body       TEXT    NOT NULL,
     active     INTEGER NOT NULL DEFAULT 1,
     updated_at TEXT             DEFAULT (DATETIME('now'))
+);
+
+CREATE TABLE IF NOT EXISTS login_attempts
+(
+    key_hash          TEXT PRIMARY KEY,
+    attempts          INTEGER NOT NULL DEFAULT 0,
+    window_started_at TEXT NOT NULL,
+    locked_until      TEXT
 );
 
 INSERT OR IGNORE

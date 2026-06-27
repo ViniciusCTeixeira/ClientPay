@@ -3,13 +3,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!Csrf::check($_POST['csrf_token'] ?? null)) {
         Flash::set('danger', 'Sessão inválida. Atualize a página e tente novamente.');
     } else {
-        $ok = Auth::attempt($_POST['email'] ?? '', $_POST['password'] ?? '');
-        if ($ok) {
-            Flash::set('success', 'Bem-vindo!');
-            header('Location: ?p=invoices/index');
-            exit;
+        try {
+            $ok = Auth::attempt(
+                $_POST['email'] ?? '',
+                $_POST['password'] ?? '',
+                $_SERVER['REMOTE_ADDR'] ?? ''
+            );
+            if ($ok) {
+                Flash::set('success', 'Bem-vindo!');
+                header('Location: ?p=invoices/index');
+                exit;
+            }
+            Flash::set('danger', 'Credenciais inválidas.');
+        } catch (RuntimeException $e) {
+            Flash::set('danger', $e->getMessage());
         }
-        Flash::set('danger', 'Credenciais inválidas.');
     }
 }
 ?>

@@ -1,4 +1,5 @@
 <?php
+Auth::requireAdmin();
 $q = trim($_GET['q'] ?? '');
 $pageNo = max(1, (int)($_GET['page'] ?? 1));
 $per = 20;
@@ -22,6 +23,7 @@ $items = User::all(($pageNo - 1) * $per, $per, $q ?: null);
         <th>#</th>
         <th>Nome</th>
         <th>Email</th>
+        <th>Perfil</th>
         <th>Criação</th>
         <th></th>
     </tr>
@@ -32,10 +34,12 @@ $items = User::all(($pageNo - 1) * $per, $per, $q ?: null);
             <td><?= $user['id'] ?></td>
             <td><?= htmlspecialchars($user['name']) ?></td>
             <td><?= htmlspecialchars($user['email']) ?></td>
+            <td><?= ($user['role'] ?? 'operator') === 'admin' ? 'Administrador' : 'Operador' ?></td>
             <td><?= Formatter::dateBr($user['created_at']) ?></td>
             <td class="text-end">
                 <a class="btn btn-sm btn-outline-secondary" href="?p=users/form&id=<?= $user['id'] ?>">Editar</a>
-                <form method="post" action="?p=users/delete" class="d-inline">
+                <form method="post" action="?p=users/delete" class="d-inline"
+                      data-confirm="Excluir este usuário?">
                     <input type="hidden" name="id" value="<?= (int)$user['id'] ?>">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Csrf::token()) ?>">
                     <button class="btn btn-sm btn-outline-danger" type="submit">Excluir</button>
@@ -45,3 +49,4 @@ $items = User::all(($pageNo - 1) * $per, $per, $q ?: null);
     <?php endforeach; ?>
     </tbody>
 </table>
+<?php include __DIR__ . '/../partials/pagination.php'; ?>

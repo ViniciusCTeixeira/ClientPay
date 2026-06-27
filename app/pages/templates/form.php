@@ -1,7 +1,7 @@
 <?php
 $id = (int)($_GET['id'] ?? 0);
-$data = $id ? TemplateM::find($id) : ['code' => 'before_due', 'title' => '', 'body' => '', 'active' => 1];
-if ($id && !$data) {
+$data = $id ? TemplateM::find($id) : null;
+if (!$id || !$data) {
     echo 'Template não encontrado.';
     return;
 }
@@ -10,7 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         Flash::set('danger', 'Sessão inválida. Atualize a página e tente novamente.');
     } else {
         $payload = [
-            'code' => $_POST['code'],
+            'code' => $data['code'],
             'title' => $_POST['title'],
             'body' => $_POST['body'],
             'active' => isset($_POST['active']) ? 1 : 0
@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!in_array($payload['code'], $allowedCodes, true) || trim($payload['title']) === '' || trim($payload['body']) === '') {
             Flash::set('danger', 'Preencha os campos obrigatórios corretamente.');
         } else {
-            TemplateM::upsert($id ?: null, $payload);
+            TemplateM::upsert($id, $payload);
             Flash::set('success', 'Template salvo');
             header('Location: ?p=templates/index');
             exit;
@@ -28,16 +28,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 ?>
-<h3><?= $id ? 'Editar' : 'Novo' ?> template</h3>
+<h3>Editar template</h3>
 <form method="post" class="row g-3">
     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Csrf::token()) ?>">
     <div class="col-md-4">
         <label class="form-label">Tipo</label>
-        <select name="code" class="form-select">
+        <select name="code" class="form-select" disabled>
             <option value="before_due" <?= $data['code'] === 'before_due' ? 'selected' : '' ?>>Pré-vencimento</option>
             <option value="on_due" <?= $data['code'] === 'on_due' ? 'selected' : '' ?>>No vencimento</option>
             <option value="overdue" <?= $data['code'] === 'overdue' ? 'selected' : '' ?>>Vencido</option>
         </select>
+        <input type="hidden" name="code" value="<?= htmlspecialchars($data['code']) ?>">
     </div>
     <div class="col-md-8">
         <label class="form-label">Título</label>

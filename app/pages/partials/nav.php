@@ -11,7 +11,9 @@
                     <li class="nav-item"><a class="nav-link" href="?p=sites/index">Sites</a></li>
                     <li class="nav-item"><a class="nav-link" href="?p=invoices/index">Mensalidades</a></li>
                     <li class="nav-item"><a class="nav-link" href="?p=templates/index">Templates</a></li>
-                    <li class="nav-item"><a class="nav-link" href="?p=users/index">Usuarios</a></li>
+                    <?php if (Auth::isAdmin()): ?>
+                        <li class="nav-item"><a class="nav-link" href="?p=users/index">Usuários</a></li>
+                    <?php endif; ?>
                 <?php endif; ?>
             </ul>
             <ul class="navbar-nav ms-auto">

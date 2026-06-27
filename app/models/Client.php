@@ -2,12 +2,12 @@
 
 class Client
 {
-    public static function all(int $offset = 0, int $limit = 50, ?string $q = null): array
+    public static function all(int $offset = 0, int $limit = 50, ?string $q = null, bool $includeArchived = false): array
     {
-        $where = '';
+        $where = $includeArchived ? 'WHERE 1=1' : 'WHERE archived_at IS NULL';
         $args = [];
         if ($q) {
-            $where = 'WHERE name LIKE ?';
+            $where .= ' AND name LIKE ?';
             $args = ['%' . $q . '%'];
         }
         $sql = "SELECT * FROM clients $where ORDER BY id DESC LIMIT :l OFFSET :o";
@@ -24,11 +24,11 @@ class Client
     public static function count(?string $q = null): int
     {
         if ($q !== null && $q !== '') {
-            $stm = Database::pdo()->prepare('SELECT COUNT(*) c FROM clients WHERE name LIKE ?');
+            $stm = Database::pdo()->prepare('SELECT COUNT(*) c FROM clients WHERE archived_at IS NULL AND name LIKE ?');
             $stm->execute(['%' . $q . '%']);
             return (int)$stm->fetch()['c'];
         }
-        return (int)Database::pdo()->query('SELECT COUNT(*) c FROM clients')->fetch()['c'];
+        return (int)Database::pdo()->query('SELECT COUNT(*) c FROM clients WHERE archived_at IS NULL')->fetch()['c'];
     }
 
     public static function find(int $id): ?array
@@ -53,6 +53,15 @@ class Client
 
     public static function delete(int $id): void
     {
-        Database::pdo()->prepare('DELETE FROM clients WHERE id=?')->execute([$id]);
+        $pdo = Database::pdo();
+        $pdo->beginTransaction();
+        try {
+            $pdo->prepare("UPDATE clients SET archived_at=datetime('now'),updated_at=datetime('now') WHERE id=? AND archived_at IS NULL")->execute([$id]);
+            $pdo->prepare("UPDATE sites SET archived_at=datetime('now'),updated_at=datetime('now') WHERE client_id=? AND archived_at IS NULL")->execute([$id]);
+            $pdo->commit();
+        } catch (Throwable $e) {
+            $pdo->rollBack();
+            throw $e;
+        }
     }
 }

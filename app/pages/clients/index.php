@@ -31,17 +31,19 @@ $items = Client::all(($pageNo - 1) * $per, $per, $q ?: null);
         <tr>
             <td><?= $r['id'] ?></td>
             <td><a href="?p=clients/view&id=<?= $r['id'] ?>"><?= htmlspecialchars($r['name']) ?></a></td>
-            <td><?= htmlspecialchars($r['email']) ?></td>
-            <td><?= htmlspecialchars($r['whatsapp']) ?></td>
+            <td><?= htmlspecialchars((string)$r['email']) ?></td>
+            <td><?= htmlspecialchars((string)$r['whatsapp']) ?></td>
             <td class="text-end">
                 <a class="btn btn-sm btn-outline-secondary" href="?p=clients/form&id=<?= $r['id'] ?>">Editar</a>
-                <form method="post" action="?p=clients/delete" class="d-inline">
+                <form method="post" action="?p=clients/delete" class="d-inline"
+                      data-confirm="Arquivar este cliente e seus sites? O histórico financeiro será preservado.">
                     <input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Csrf::token()) ?>">
-                    <button class="btn btn-sm btn-outline-danger" type="submit">Excluir</button>
+                    <button class="btn btn-sm btn-outline-danger" type="submit">Arquivar</button>
                 </form>
             </td>
         </tr>
     <?php endforeach; ?>
     </tbody>
 </table>
+<?php include __DIR__ . '/../partials/pagination.php'; ?>

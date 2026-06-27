@@ -11,35 +11,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     $ym = $_POST['ym'] ?? date('Y-m');
     $dueDayInput = max(1, min(31, (int)($_POST['due_day'] ?? 5)));
-    if (!preg_match('/^\d{4}-\d{2}$/', $ym)) {
+    if (!preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $ym)) {
         Flash::set('danger','Competencia invalida. Use AAAA-MM.');
         header('Location: ?p=invoices/generate&ym='.urlencode(date('Y-m')).'&due_day='.$dueDayInput); exit;
     }
 
     $monthStart = $ym . '-01';
-    $daysInMonth = (int)date('t', strtotime($monthStart));
+    $monthDate = DateTimeImmutable::createFromFormat('!Y-m-d', $monthStart);
+    if (!$monthDate || $monthDate->format('Y-m-d') !== $monthStart) {
+        Flash::set('danger', 'Competência inválida.');
+        header('Location: ?p=invoices/generate');
+        exit;
+    }
+    $daysInMonth = (int)$monthDate->format('t');
     $sites = Site::all(0, 10000);
     $created = 0;
     $skipped = 0;
-    foreach ($sites as $s) {
-        $siteDueDay = Invoice::lastDueDayForSite((int)$s['id']) ?? $dueDayInput;
-        $siteDueDay = max(1, min($siteDueDay, $daysInMonth));
-        $dueDate = $ym . '-' . str_pad((string)$siteDueDay, 2, '0', STR_PAD_LEFT);
-        if (Invoice::existsForSiteDate((int)$s['id'], $dueDate)) {
-            $skipped++;
-            continue;
+    $pdo = Database::pdo();
+    $pdo->beginTransaction();
+    try {
+        foreach ($sites as $s) {
+            $siteDueDay = Invoice::lastDueDayForSite((int)$s['id']) ?? $dueDayInput;
+            $siteDueDay = max(1, min($siteDueDay, $daysInMonth));
+            $dueDate = $ym . '-' . str_pad((string)$siteDueDay, 2, '0', STR_PAD_LEFT);
+            if (Invoice::existsForSiteDate((int)$s['id'], $dueDate)) {
+                $skipped++;
+                continue;
+            }
+            $amount = PlanHistory::resolveAmountForDate((int)$s['id'], $dueDate);
+            if ($amount <= 0) continue;
+            Invoice::create([
+                    'site_id' => (int)$s['id'],
+                    'client_id' => (int)$s['client_id'],
+                    'amount' => $amount,
+                    'due_date' => $dueDate,
+                    'status' => 'pending',
+                    'notes' => 'Gerado automaticamente'
+            ]);
+            $created++;
         }
-        $amount = PlanHistory::resolveAmountForDate((int)$s['id'], $dueDate);
-        if ($amount <= 0) continue;
-        Invoice::create([
-                'site_id' => (int)$s['id'],
-                'client_id' => (int)$s['client_id'],
-                'amount' => $amount,
-                'due_date' => $dueDate,
-                'status' => 'pending',
-                'notes' => 'Gerado automaticamente'
-        ]);
-        $created++;
+        $pdo->commit();
+    } catch (Throwable $e) {
+        $pdo->rollBack();
+        throw $e;
     }
     $msg = "Geradas $created mensalidades para $ym.";
     if ($skipped) {

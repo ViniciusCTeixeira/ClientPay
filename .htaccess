@@ -1,9 +1,8 @@
 # Use as rewrite rules no Apache (ativar mod_rewrite)
 RewriteEngine On
-RewriteBase /
 
 <IfModule mod_authz_core.c>
-    <FilesMatch "^(config\.php|\.env)$">
+    <FilesMatch "^(config\.php|\.env|phpunit\.xml|composer\.(json|lock))$">
         Require all denied
     </FilesMatch>
     <FilesMatch "\.(sqlite|db|sql|log)$">
@@ -11,7 +10,14 @@ RewriteBase /
     </FilesMatch>
 </IfModule>
 
-RewriteRule ^app/(storage|sql)/ - [F,L,NC]
+RewriteRule ^(?:app|tests|\.github)/ - [F,L,NC]
+RewriteRule ^\.git(?:/|$) - [F,L,NC]
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "DENY"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
 # Arquivos/diretorios existentes passam direto
 RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d

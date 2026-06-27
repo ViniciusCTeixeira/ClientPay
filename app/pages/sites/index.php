@@ -39,13 +39,15 @@ $items = Site::all(($pageNo - 1) * $per, $per, $q ?: null);
             <td>R$ <?= Formatter::money($r['current_monthly_fee']) ?></td>
             <td class="text-end">
                 <a class="btn btn-sm btn-outline-secondary" href="?p=sites/form&id=<?= $r['id'] ?>">Editar</a>
-                <form method="post" action="?p=sites/delete" class="d-inline">
+                <form method="post" action="?p=sites/delete" class="d-inline"
+                      data-confirm="Arquivar este site? As mensalidades existentes serão preservadas.">
                     <input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Csrf::token()) ?>">
-                    <button class="btn btn-sm btn-outline-danger" type="submit">Excluir</button>
+                    <button class="btn btn-sm btn-outline-danger" type="submit">Arquivar</button>
                 </form>
             </td>
         </tr>
     <?php endforeach; ?>
     </tbody>
 </table>
+<?php include __DIR__ . '/../partials/pagination.php'; ?>
