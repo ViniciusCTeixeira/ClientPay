@@ -5,17 +5,18 @@ $per = 20;
 $total = Site::count($q ?: null);
 $items = Site::all(($pageNo - 1) * $per, $per, $q ?: null);
 ?>
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h3>Sites</h3>
-    <a href="?p=sites/form" class="btn btn-primary">+ Novo</a>
+<div class="page-header">
+    <div class="page-heading"><h3>Sites</h3><p>Gerencie projetos, domínios e valores recorrentes vinculados aos clientes.</p></div>
+    <div class="page-actions"><a href="?p=sites/form" class="btn btn-primary">+ Novo site</a></div>
 </div>
-<form class="mb-3" method="get">
+<form class="filter-panel" method="get">
     <input type="hidden" name="p" value="sites/index">
     <div class="input-group">
         <input name="q" class="form-control" placeholder="Buscar por cliente ou site" value="<?= htmlspecialchars($q) ?>">
-        <button class="btn btn-outline-secondary">Buscar</button>
+        <button class="btn btn-soft">Buscar</button>
     </div>
 </form>
+<div class="content-panel table-responsive">
 <table class="table table-striped align-middle">
     <thead>
     <tr>
@@ -48,6 +49,10 @@ $items = Site::all(($pageNo - 1) * $per, $per, $q ?: null);
             </td>
         </tr>
     <?php endforeach; ?>
+    <?php if (!$items): ?>
+        <tr><td colspan="7"><div class="empty-state"><span class="empty-state-mark">S</span><strong>Nenhum site encontrado</strong><span>Cadastre um site e defina sua mensalidade.</span></div></td></tr>
+    <?php endif; ?>
     </tbody>
 </table>
+</div>
 <?php include __DIR__ . '/../partials/pagination.php'; ?>

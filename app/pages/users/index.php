@@ -6,17 +6,18 @@ $per = 20;
 $total = User::count($q ?: null);
 $items = User::all(($pageNo - 1) * $per, $per, $q ?: null);
 ?>
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h3>Usuarios</h3>
-  <a href="?p=users/form" class="btn btn-primary">+ Novo</a>
+<div class="page-header">
+  <div class="page-heading"><h3>Equipe</h3><p>Controle quem pode acessar e administrar a operação.</p></div>
+  <div class="page-actions"><a href="?p=users/form" class="btn btn-primary">+ Novo usuário</a></div>
 </div>
-<form class="mb-3" method="get">
+<form class="filter-panel" method="get">
   <input type="hidden" name="p" value="users/index">
   <div class="input-group">
     <input name="q" class="form-control" placeholder="Buscar por nome ou email" value="<?= htmlspecialchars($q) ?>">
-    <button class="btn btn-outline-secondary">Buscar</button>
+    <button class="btn btn-soft">Buscar</button>
   </div>
 </form>
+<div class="content-panel table-responsive">
 <table class="table table-striped align-middle">
     <thead>
     <tr>
@@ -34,7 +35,7 @@ $items = User::all(($pageNo - 1) * $per, $per, $q ?: null);
             <td><?= $user['id'] ?></td>
             <td><?= htmlspecialchars($user['name']) ?></td>
             <td><?= htmlspecialchars($user['email']) ?></td>
-            <td><?= ($user['role'] ?? 'operator') === 'admin' ? 'Administrador' : 'Operador' ?></td>
+            <td><span class="badge text-bg-<?= ($user['role'] ?? 'operator') === 'admin' ? 'success' : 'secondary' ?>"><?= ($user['role'] ?? 'operator') === 'admin' ? 'Administrador' : 'Operador' ?></span></td>
             <td><?= Formatter::dateBr($user['created_at']) ?></td>
             <td class="text-end">
                 <a class="btn btn-sm btn-outline-secondary" href="?p=users/form&id=<?= $user['id'] ?>">Editar</a>
@@ -47,6 +48,10 @@ $items = User::all(($pageNo - 1) * $per, $per, $q ?: null);
             </td>
         </tr>
     <?php endforeach; ?>
+    <?php if (!$items): ?>
+        <tr><td colspan="6"><div class="empty-state"><span class="empty-state-mark">U</span><strong>Nenhum usuário encontrado</strong><span>Altere a busca ou adicione alguém à equipe.</span></div></td></tr>
+    <?php endif; ?>
     </tbody>
 </table>
+</div>
 <?php include __DIR__ . '/../partials/pagination.php'; ?>

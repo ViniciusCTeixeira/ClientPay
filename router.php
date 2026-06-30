@@ -5,7 +5,7 @@
 $uriPath = rawurldecode((string)(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/'));
 $allowed = ['/', '/index.php'];
 
-if ($uriPath === '/assets/app.js') {
+if (in_array($uriPath, ['/assets/app.js', '/assets/app.css'], true)) {
     return false;
 }
 

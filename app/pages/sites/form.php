@@ -71,8 +71,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 ?>
-<h3><?= $id ? 'Editar' : 'Novo' ?> site</h3>
-<form method="post" class="row g-3">
+<div class="page-header"><div class="page-heading"><h3><?= $id ? 'Editar' : 'Novo' ?> site</h3><p><?= $id ? 'Revise os dados do projeto e gerencie os reajustes da mensalidade.' : 'Vincule um novo projeto ao cliente e defina seus valores iniciais.' ?></p></div></div>
+<form method="post" class="row g-3 form-panel">
     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Csrf::token()) ?>">
     <input type="hidden" name="form_action" value="save_site">
     <div class="col-md-6">
@@ -108,14 +108,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="form-text">Alterações devem ser registradas no histórico.</div>
     </div>
     <div class="col-12">
-        <button class="btn btn-primary">Salvar</button>
+        <button class="btn btn-primary">Salvar site</button>
+        <a class="btn btn-soft ms-2" href="?p=sites/index">Cancelar</a>
     </div>
 </form>
 
 <?php if ($id): $hist = PlanHistory::bySite($id); ?>
-    <hr>
-    <h5>Histórico de mensalidade</h5>
-    <form method="post" class="row g-2" action="?p=sites/form&id=<?= $id ?>">
+    <div class="section-heading"><h5>Histórico de mensalidade</h5><p>Registre novos valores sem perder as vigências anteriores.</p></div>
+    <form method="post" class="row g-2 form-panel history-form" action="?p=sites/form&id=<?= $id ?>">
         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Csrf::token()) ?>">
         <input type="hidden" name="form_action" value="add_history">
         <div class="col-md-3">
@@ -134,7 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <button class="btn btn-outline-primary mt-4">Adicionar</button>
         </div>
     </form>
-    <table class="table table-sm mt-3">
+    <div class="content-panel table-responsive mt-3"><table class="table table-sm">
         <thead>
         <tr>
             <th>Válido desde</th>
@@ -151,5 +151,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </tr>
         <?php endforeach; ?>
         </tbody>
-    </table>
+    </table></div>
 <?php endif; ?>

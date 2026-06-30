@@ -60,8 +60,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 ?>
-<h3><?= $id ? 'Editar' : 'Novo' ?> usuário</h3>
-<form method="post" class="row g-3">
+<div class="page-header"><div class="page-heading"><h3><?= $id ? 'Editar' : 'Novo' ?> usuário</h3><p><?= $id ? 'Atualize os dados e o nível de acesso deste usuário.' : 'Convide alguém para colaborar na operação do ClientPay.' ?></p></div></div>
+<form method="post" class="row g-3 form-panel">
     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Csrf::token()) ?>">
     <div class="col-12">
         <label class="form-label">Nome *</label>
@@ -88,6 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <input type="password" name="confirm" class="form-control" <?= $id ? '' : 'required' ?> minlength="6">
     </div>
     <div class="col-12">
-        <button class="btn btn-primary">Salvar</button>
+        <button class="btn btn-primary">Salvar usuário</button>
+        <a class="btn btn-soft ms-2" href="?p=users/index">Cancelar</a>
     </div>
 </form>

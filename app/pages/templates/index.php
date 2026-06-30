@@ -1,7 +1,8 @@
 <?php $items = TemplateM::all(); ?>
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h3>Templates de mensagens</h3>
+<div class="page-header">
+    <div class="page-heading"><h3>Mensagens</h3><p>Personalize os textos usados antes, no dia e depois do vencimento.</p></div>
 </div>
+<div class="content-panel table-responsive">
 <table class="table table-striped">
     <thead>
     <tr>
@@ -14,7 +15,7 @@
     <tbody>
     <?php foreach ($items as $r): ?>
         <tr>
-            <td><code>
+            <td><span class="badge text-bg-secondary">
                     <?php if ($r['code'] == 'before_due') { ?>
                         Pré-vencimento
                     <?php } ?>
@@ -24,9 +25,9 @@
                     <?php if ($r['code'] == 'overdue') { ?>
                         Vencido
                     <?php } ?>
-                </code></td>
+                </span></td>
             <td><?= htmlspecialchars($r['title']) ?></td>
-            <td><?= $r['active'] ? 'Sim' : 'Não' ?></td>
+            <td><span class="badge text-bg-<?= $r['active'] ? 'success' : 'secondary' ?>"><?= $r['active'] ? 'Ativo' : 'Inativo' ?></span></td>
             <td class="text-end">
                 <a class="btn btn-sm btn-outline-secondary" href="?p=templates/form&id=<?= $r['id'] ?>">Editar</a>
             </td>
@@ -34,3 +35,4 @@
     <?php endforeach; ?>
     </tbody>
 </table>
+</div>

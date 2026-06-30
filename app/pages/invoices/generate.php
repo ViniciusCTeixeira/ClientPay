@@ -64,8 +64,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 ?>
-<h3>Gerar mensalidades</h3>
-<form method="post" class="row g-3">
+<div class="page-header"><div class="page-heading"><h3>Gerar mensalidades</h3><p>Crie as cobranças da competência para todos os sites ativos em uma única ação.</p></div></div>
+<form method="post" class="row g-3 form-panel">
     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Csrf::token()) ?>">
     <div class="col-md-4">
         <label class="form-label">Competencia (AAAA-MM)</label>
@@ -77,6 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="form-text">Usado somente para sites sem mensalidades anteriores.</div>
     </div>
     <div class="col-12">
-        <button class="btn btn-primary">Gerar</button>
+        <button class="btn btn-primary">Gerar mensalidades</button>
+        <a class="btn btn-soft ms-2" href="?p=invoices/index">Cancelar</a>
     </div>
 </form>

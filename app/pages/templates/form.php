@@ -28,8 +28,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 ?>
-<h3>Editar template</h3>
-<form method="post" class="row g-3">
+<div class="page-header"><div class="page-heading"><h3>Editar mensagem</h3><p>Adapte o texto ao tom da sua marca usando as variáveis disponíveis.</p></div></div>
+<form method="post" class="row g-3 form-panel">
     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Csrf::token()) ?>">
     <div class="col-md-4">
         <label class="form-label">Tipo</label>
@@ -55,6 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <label class="form-check-label" for="tactive">Ativo</label>
     </div>
     <div class="col-12">
-        <button class="btn btn-primary">Salvar</button>
+        <button class="btn btn-primary">Salvar mensagem</button>
+        <a class="btn btn-soft ms-2" href="?p=templates/index">Cancelar</a>
     </div>
 </form>

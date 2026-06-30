@@ -61,8 +61,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 ?>
-<h3><?= $id ? 'Editar' : 'Nova' ?> mensalidade</h3>
-<form method="post" class="row g-3">
+<div class="page-header"><div class="page-heading"><h3><?= $id ? 'Editar' : 'Nova' ?> mensalidade</h3><p><?= $id ? 'Atualize vencimento, status e informações do recebimento.' : 'Registre uma cobrança individual para um cliente e site.' ?></p></div></div>
+<form method="post" class="row g-3 form-panel">
     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Csrf::token()) ?>">
     <div class="col-md-4">
         <label class="form-label">Cliente *</label>
@@ -131,6 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <input name="payment_reference" class="form-control" value="<?= htmlspecialchars((string)($data['payment_reference'] ?? '')) ?>">
     </div>
     <div class="col-12">
-        <button class="btn btn-primary">Salvar</button>
+        <button class="btn btn-primary">Salvar mensalidade</button>
+        <a class="btn btn-soft ms-2" href="?p=invoices/index">Cancelar</a>
     </div>
 </form>

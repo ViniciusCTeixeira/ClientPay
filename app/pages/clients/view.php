@@ -7,12 +7,9 @@ if (!$c) {
 }
 $sites = Site::allByClient($id);
 ?>
-<h3><?= htmlspecialchars($c['name']) ?></h3>
-<p>Email: <?= htmlspecialchars((string)$c['email']) ?> • WhatsApp: <?= htmlspecialchars((string)$c['whatsapp']) ?></p>
-<hr>
-<h5>Sites do cliente</h5>
-<p><a class="btn btn-sm btn-primary" href="?p=sites/form&client_id=<?= $id ?>">+ Novo site</a></p>
-<table class="table table-sm">
+<div class="page-header"><div class="page-heading"><h3><?= htmlspecialchars($c['name']) ?></h3><p><?= htmlspecialchars((string)$c['email']) ?><?= $c['email'] && $c['whatsapp'] ? ' · ' : '' ?><?= htmlspecialchars((string)$c['whatsapp']) ?></p></div><div class="page-actions"><a class="btn btn-primary" href="?p=sites/form&client_id=<?= $id ?>">+ Novo site</a><a class="btn btn-soft" href="?p=clients/form&id=<?= $id ?>">Editar cliente</a></div></div>
+<div class="section-heading"><h5>Sites do cliente</h5><p>Projetos ativos e seus valores atuais.</p></div>
+<div class="content-panel table-responsive"><table class="table table-sm">
     <thead>
     <tr>
         <th>#</th>
@@ -33,4 +30,4 @@ $sites = Site::allByClient($id);
         </tr>
     <?php endforeach; ?>
     </tbody>
-</table>
+</table></div>

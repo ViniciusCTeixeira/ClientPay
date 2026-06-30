@@ -12,25 +12,28 @@ $items = Invoice::all(($pageNo - 1) * $per, $per, $q ?: null, $status ?: null, $
 $summary = Invoice::summary($ym);
 $exportQuery = http_build_query(['p' => 'invoices/export', 'q' => $q, 'status' => $status, 'ym' => $ym]);
 ?>
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h3>Mensalidades</h3>
-    <div>
-        <a href="?p=invoices/form" class="btn btn-primary">+ Nova</a>
-        <a href="?p=invoices/generate" class="btn btn-outline-primary">Gerar em lote</a>
-        <a href="?<?= htmlspecialchars($exportQuery) ?>" class="btn btn-outline-success">Exportar CSV</a>
+<div class="page-header">
+    <div class="page-heading">
+        <h3>Mensalidades</h3>
+        <p>Acompanhe recebimentos, vencimentos e cobranças recorrentes em um só lugar.</p>
+    </div>
+    <div class="page-actions">
+        <a href="?p=invoices/form" class="btn btn-primary">+ Nova mensalidade</a>
+        <a href="?p=invoices/generate" class="btn btn-soft">Gerar em lote</a>
+        <a href="?<?= htmlspecialchars($exportQuery) ?>" class="btn btn-soft">Exportar CSV</a>
         <form method="post" action="?p=invoices/update" class="d-inline">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Csrf::token()) ?>">
-            <button type="submit" class="btn btn-outline-primary">Atualizar</button>
+            <button type="submit" class="btn btn-soft">Atualizar status</button>
         </form>
     </div>
 </div>
-<div class="row g-3 mb-3">
-    <div class="col-md-3"><div class="card h-100"><div class="card-body"><div class="text-muted">Mensalidades</div><div class="fs-4"><?= (int)$summary['total'] ?></div></div></div></div>
-    <div class="col-md-3"><div class="card h-100"><div class="card-body"><div class="text-muted">A receber</div><div class="fs-4">R$ <?= Formatter::money($summary['pending_amount']) ?></div></div></div></div>
-    <div class="col-md-3"><div class="card h-100 border-danger"><div class="card-body"><div class="text-muted">Vencido</div><div class="fs-4 text-danger">R$ <?= Formatter::money($summary['overdue_amount']) ?></div></div></div></div>
-    <div class="col-md-3"><div class="card h-100 border-success"><div class="card-body"><div class="text-muted">Recebido</div><div class="fs-4 text-success">R$ <?= Formatter::money($summary['paid_amount']) ?></div></div></div></div>
+<div class="row g-3 summary-grid">
+    <div class="col-6 col-xl-3"><div class="metric-card"><div class="metric-top"><span class="metric-label">Mensalidades</span><span class="metric-icon">#</span></div><div class="metric-value"><?= (int)$summary['total'] ?></div></div></div>
+    <div class="col-6 col-xl-3"><div class="metric-card metric-warning"><div class="metric-top"><span class="metric-label">A receber</span><span class="metric-icon">R$</span></div><div class="metric-value">R$ <?= Formatter::money($summary['pending_amount']) ?></div></div></div>
+    <div class="col-6 col-xl-3"><div class="metric-card metric-danger"><div class="metric-top"><span class="metric-label">Vencido</span><span class="metric-icon">!</span></div><div class="metric-value">R$ <?= Formatter::money($summary['overdue_amount']) ?></div></div></div>
+    <div class="col-6 col-xl-3"><div class="metric-card metric-success"><div class="metric-top"><span class="metric-label">Recebido</span><span class="metric-icon">✓</span></div><div class="metric-value">R$ <?= Formatter::money($summary['paid_amount']) ?></div></div></div>
 </div>
-<form class="mb-3" method="get">
+<form class="filter-panel" method="get">
     <input type="hidden" name="p" value="invoices/index">
     <div class="row g-2">
         <div class="col-md-5"><input name="q" class="form-control" placeholder="Buscar por cliente ou site" value="<?= htmlspecialchars($q) ?>"></div>
@@ -44,10 +47,10 @@ $exportQuery = http_build_query(['p' => 'invoices/export', 'q' => $q, 'status' =
             </select>
         </div>
         <div class="col-md-2"><input name="ym" type="month" class="form-control" value="<?= htmlspecialchars($ym) ?>"></div>
-        <div class="col-md-2 d-grid"><button class="btn btn-outline-secondary">Filtrar</button></div>
+        <div class="col-md-2 d-grid"><button class="btn btn-soft">Aplicar filtros</button></div>
     </div>
 </form>
-<div class="table-responsive">
+<div class="content-panel"><div class="table-responsive">
 <table class="table table-striped align-middle">
     <thead>
     <tr>
@@ -98,7 +101,10 @@ $exportQuery = http_build_query(['p' => 'invoices/export', 'q' => $q, 'status' =
             </td>
         </tr>
     <?php endforeach; ?>
+    <?php if (!$items): ?>
+        <tr><td colspan="7"><div class="empty-state"><span class="empty-state-mark">R$</span><strong>Nenhuma mensalidade encontrada</strong><span>Ajuste os filtros ou gere uma nova competência.</span></div></td></tr>
+    <?php endif; ?>
     </tbody>
 </table>
-</div>
+</div></div>
 <?php include __DIR__ . '/../partials/pagination.php'; ?>

@@ -27,9 +27,9 @@ $body = TemplateEngine::render($tmp['body'] ?? '', $vars);
 $waNumber = preg_replace('/\D+/', '', $inv['whatsapp'] ?? '');
 $waLink = $waNumber ? ('https://wa.me/' . $waNumber . '?text=' . rawurlencode($body)) : null;
 ?>
-<h3>Pré-visualização da mensagem</h3>
-<p><strong>Template:</strong> <?= htmlspecialchars($tmp['title'] ?? $code) ?> (<?= htmlspecialchars($code) ?>)</p>
-<div class="card">
+<div class="page-header"><div class="page-heading"><h3>Pré-visualização</h3><p>Revise a cobrança antes de abrir a conversa no WhatsApp.</p></div></div>
+<p class="message-template-label"><strong>Mensagem:</strong> <?= htmlspecialchars($tmp['title'] ?? $code) ?></p>
+<div class="card message-preview-card">
     <div class="card-body">
         <pre class="mb-0"><?= htmlspecialchars($body) ?></pre>
     </div>

@@ -32,10 +32,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 ?>
-<div class="row justify-content-center">
-    <div class="col-md-5">
-        <h3>Trocar senha</h3>
-        <form method="post" class="mt-3">
+<div class="page-header"><div class="page-heading"><h3>Trocar senha</h3><p>Use uma senha forte e diferente das utilizadas em outros serviços.</p></div></div>
+<div class="form-panel password-panel">
+        <form method="post">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Csrf::token()) ?>">
             <div class="mb-3">
                 <label class="form-label">Senha atual</label>
@@ -49,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <label class="form-label">Confirmar nova senha</label>
                 <input type="password" name="confirm" class="form-control" required minlength="6">
             </div>
-            <button class="btn btn-primary">Salvar</button>
+            <button class="btn btn-primary">Atualizar senha</button>
+            <a class="btn btn-soft ms-2" href="?p=invoices/index">Cancelar</a>
         </form>
-    </div>
 </div>

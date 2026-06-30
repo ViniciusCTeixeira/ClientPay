@@ -37,8 +37,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 ?>
-<h3><?= $id ? 'Editar' : 'Novo' ?> cliente</h3>
-<form method="post" class="row g-3">
+<div class="page-header"><div class="page-heading"><h3><?= $id ? 'Editar' : 'Novo' ?> cliente</h3><p><?= $id ? 'Atualize os dados de contato e mantenha o cadastro em dia.' : 'Adicione os dados principais para iniciar o relacionamento comercial.' ?></p></div></div>
+<form method="post" class="row g-3 form-panel">
     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Csrf::token()) ?>">
     <div class="col-12">
         <label class="form-label">Nome *</label>
@@ -53,6 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <input name="whatsapp" class="form-control" value="<?= htmlspecialchars((string)$data['whatsapp']) ?>">
     </div>
     <div class="col-12">
-        <button class="btn btn-primary">Salvar</button>
+        <button class="btn btn-primary">Salvar cliente</button>
+        <a class="btn btn-soft ms-2" href="?p=clients/index">Cancelar</a>
     </div>
 </form>

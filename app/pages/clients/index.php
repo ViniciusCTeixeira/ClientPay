@@ -5,17 +5,18 @@ $per = 20;
 $total = Client::count($q ?: null);
 $items = Client::all(($pageNo - 1) * $per, $per, $q ?: null);
 ?>
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h3>Clientes</h3>
-    <a href="?p=clients/form" class="btn btn-primary">+ Novo</a>
+<div class="page-header">
+    <div class="page-heading"><h3>Clientes</h3><p>Centralize contatos e acesse rapidamente os sites de cada cliente.</p></div>
+    <div class="page-actions"><a href="?p=clients/form" class="btn btn-primary">+ Novo cliente</a></div>
 </div>
-<form class="mb-3" method="get">
+<form class="filter-panel" method="get">
     <input type="hidden" name="p" value="clients/index">
     <div class="input-group">
         <input name="q" class="form-control" placeholder="Buscar por nome" value="<?= htmlspecialchars($q) ?>">
-        <button class="btn btn-outline-secondary">Buscar</button>
+        <button class="btn btn-soft">Buscar</button>
     </div>
 </form>
+<div class="content-panel table-responsive">
 <table class="table table-striped align-middle">
     <thead>
     <tr>
@@ -44,6 +45,10 @@ $items = Client::all(($pageNo - 1) * $per, $per, $q ?: null);
             </td>
         </tr>
     <?php endforeach; ?>
+    <?php if (!$items): ?>
+        <tr><td colspan="5"><div class="empty-state"><span class="empty-state-mark">C</span><strong>Nenhum cliente encontrado</strong><span>Cadastre o primeiro cliente para começar.</span></div></td></tr>
+    <?php endif; ?>
     </tbody>
 </table>
+</div>
 <?php include __DIR__ . '/../partials/pagination.php'; ?>

@@ -75,5 +75,7 @@ if (!$path || !str_starts_with($path, $pagesRoot . DIRECTORY_SEPARATOR)) {
 
 include __DIR__ . '/app/pages/partials/header.php';
 include __DIR__ . '/app/pages/partials/nav.php';
+echo '<main class="' . (Auth::check() ? 'app-main' : 'guest-main') . '">';
 echo $pageContent;
+echo '</main>';
 include __DIR__ . '/app/pages/partials/footer.php';
